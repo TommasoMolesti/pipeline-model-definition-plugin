@@ -318,14 +318,19 @@ class Utils {
                 return;
             }
 
-            int count = 0
+            boolean stageFound = false
             for (FlowNode node : stepContextFlowNode.iterateEnclosingBlocks()) {
-                if (CommonUtils.isStageWithOptionalName(stageName).test(node) || isParallelBranchFlowNode(stageName).apply(node)) {
+                boolean matches = CommonUtils.isStageWithOptionalName(stageName).test(node) || isParallelBranchFlowNode(stageName).apply(node)
+                if (matches) {
                     addTagToFlowNode(node, tagName, tagValue)
-                    count++
                 }
-                if (count == 2) {
+                if (stageFound && node.getAction(LabelAction.class) != null && CommonUtils.isStageWithOptionalName().test(node)) {
+                    // Only the stage itself and its directly enclosing parallel branch belong to this stage.
+                    // Anything further up is an enclosing stage, possibly with the same name.
                     break
+                }
+                if (matches) {
+                    stageFound = true
                 }
             }
         } catch (IOException e) {
